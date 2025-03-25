@@ -1,0 +1,3 @@
+[submodule "jsonrpc"]
+	path = jsonrpc
+	url = https://github.com/buzzcola3/upy_json_RPC

@@ -1,0 +1,88 @@
+<!--
+//simple html file for flashing windbond spi flash chips. That has a flash bin, dump bin button, auto detect chip button, manual chip select and some progress bar with percenttage
+//and a simple log window for messages
+//nice to have a pretty web interface for flashing chips
+//this is a simple html with pretty formatting that uses javascript to get all required data and display it
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>e-P flasher</title>
+    <style>
+        body {
+            font-family: cascadia code, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background-color: #007bff;
+            border-radius: 5px;
+            transition: width 0.5s;
+        }
+
+        .log {
+            width: calc(100% - 20px);
+            height: 200px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-top: 10px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>e-P flasher</h1>
+        <button class="button" id="flash">Flash</button>
+        <button class="button" id="dump">Dump</button>
+        <button class="button" id="detect">Auto Detect Chip</button>
+        <button class="button" id="erase">Erase</button>
+        <select id="chip">
+            <option value="" disabled selected>Select a chip</option>
+            <!-- Options will be added through JavaScript -->
+        </select>
+        <div class="progress">
+            <div class="progress-bar"></div>
+        </div>
+        <div class="log"></div>
+    </div>
+    <script type="module" src="webserver/dom_manager.js"></script>
+</body>
+</html>
