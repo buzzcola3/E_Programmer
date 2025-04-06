@@ -1,10 +1,5 @@
-from network_conn import connect_wifi
-connect_wifi()
+import network_conn
 
 import programmer
 
-
-
 import hosting
-
-

@@ -30,7 +30,7 @@ export function connectToWS(debug = false) {
         console.log("Received message from WebSocket server:", response);
       }
       receiveBuffer.push(response);
-      if (receiveBuffer.length > 64) {
+      if (receiveBuffer.length > 4) {
         receiveBuffer.shift(); // Maintain buffer size
       }
     });

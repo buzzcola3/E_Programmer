@@ -78,9 +78,7 @@ class SPIFlash:
         """
         Sets the flash chip write enable state.
         """
-        self.cs.value(0)
         self.hspi.write(bytes([self.CMD_W_EN if enable else self.CMD_W_DE]))
-        self.cs.value(1)
 
     def erase_all(self, **kwargs):
         """
@@ -125,16 +123,16 @@ class SPIFlash:
         """
         Writes a page starting at 'addr_start' with the content in 'buf'.
         """
-        self.set_write_enable(True)
-
         self.cs.value(0)
+        self.set_write_enable(True)
+        
         self.hspi.write(bytes([self.CMD_PAGE_PGM]))
         addr_bytes = addr_start.to_bytes(3, 'big')
         self.hspi.write(addr_bytes)
-        self.hspi.write(buf)  # append padding of 16 bytes (0xFF) at end of buffer
-        self.cs.value(1)
-
+        self.hspi.write(buf)
+        
         self.set_write_enable(False)
+        self.cs.value(1)
         
 
     def erase_sector(self, addr_start: int, **kwargs):

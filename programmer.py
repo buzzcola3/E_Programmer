@@ -3,8 +3,9 @@ import binascii
 from jsonrpc import dispatcher
 from flash_interface import SPIFlash
 # block size for reading the SPI flash 32KB
-READ_BLOCK_SIZE = 32 * 1024
-WRITE_BLOCK_SIZE = 2 * 1024 # anything more seems unstable, why ?
+TRANSMIT_PACKET_SIZE = 32 * 1024
+RECEIVE_PACKET_SIZE = 2 * 1024 # anything more is broken, likely due to lwip buffer is set to 5KB in default build of MicroPython
+PAGE_SIZE = 256 # 256 bytes per page on any 25Q (and other 25*) series flash
 
 # Create an instance of the flash class and register its methods with the JSON-RPC dispatcher.
 flash = SPIFlash()
@@ -23,18 +24,18 @@ dispatcher.add_method(name="erase_64k_block", f=flash.erase_64k_block)
 dispatcher.add_method(name="busy", f=flash.busy)
 
 @dispatcher.add_method
-def get_read_block_size(**kwargs):
+def get_transmit_packet_size(**kwargs):
     """
     Returns the block size for reading the flash memory.
     """
-    return READ_BLOCK_SIZE
+    return TRANSMIT_PACKET_SIZE
 
 @dispatcher.add_method
-def get_write_block_size(**kwargs):
+def get_receive_packet_size(**kwargs):
     """
     Returns the block size for writing the flash memory.
     """
-    return WRITE_BLOCK_SIZE
+    return RECEIVE_PACKET_SIZE
 
 @dispatcher.add_method
 def programmer_read_block(**kwargs):
@@ -49,8 +50,8 @@ def programmer_read_block(**kwargs):
     block_id = kwargs.get('block_id', 0)
     append_crc = kwargs.get('append_crc', False)
     # Calculate the starting address for the given block_id using READ_BLOCK_SIZE.
-    address = block_id * READ_BLOCK_SIZE
-    data = flash.read_flash(address, READ_BLOCK_SIZE)
+    address = block_id * TRANSMIT_PACKET_SIZE
+    data = flash.read_flash(address, TRANSMIT_PACKET_SIZE)
     print(f"Read {len(data)} bytes from block {block_id} at address {address:#010x}")
     if append_crc:
         crc = sum(data) % 256
@@ -86,7 +87,6 @@ def programmer_write_block(**kwargs):
     block_id = kwargs.get('block_id', 0)
     data_b64 = kwargs.get('data')
     expected_crc = kwargs.get('crc', None)
-    chip_page_size = kwargs.get('chip_page_size')
 
     if data_b64 is None:
         raise ValueError("No data provided for writing.")
@@ -98,21 +98,21 @@ def programmer_write_block(**kwargs):
         raise ValueError("Invalid base64 data provided.") from e
 
     # Ensure the data length matches the expected block size.
-    if len(data) != WRITE_BLOCK_SIZE:
-        raise ValueError(f"Data length ({len(data)}) does not match expected block size ({WRITE_BLOCK_SIZE}).")
+    if len(data) != RECEIVE_PACKET_SIZE:
+        raise ValueError(f"Data length ({len(data)}) does not match expected block size ({RECEIVE_PACKET_SIZE}).")
 
     # Calculate the starting address based on the block_id.
-    address = block_id * WRITE_BLOCK_SIZE
+    address = block_id * RECEIVE_PACKET_SIZE
 
     # Write data in pages.
-    for i in range(0, len(data), chip_page_size):
-        flash.write_page(address + i, data[i:i+chip_page_size])
+    for i in range(0, len(data), PAGE_SIZE):
+        flash.write_page(address + i, data[i:i+PAGE_SIZE])
 
     print(f"Wrote {len(data)} bytes to block {block_id} at address {address:#010x}")
 
     # If an expected CRC was provided, verify by reading the block back.
     if expected_crc is not None:
-        written_data = flash.read_flash(address, WRITE_BLOCK_SIZE)
+        written_data = flash.read_flash(address, RECEIVE_PACKET_SIZE)
         if expected_crc != sum(written_data) % 256:
             #print(f"expected_crc: {expected_crc}, calculated_crc: {sum(written_data) % 256}")
             #print(f"Block data: {written_data}")

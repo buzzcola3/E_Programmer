@@ -90,14 +90,13 @@ export async function getKnownChips(debug = false) {
 }
 
 /**
- * Gets the number of blocks for a given chip based on its capacity.
+ * Gets the number of write blocks for a given chip based on its capacity.
  *
  * @param {string} chipName - The model name of the chip.
- * @param {boolean} [for_read=false] - If true, retrieves the read block size.
  * @param {boolean} [debug=false] - If true, logs debug information.
- * @returns {Promise<number>} Resolves to the number of blocks.
+ * @returns {Promise<number>} Resolves to the number of write blocks.
  */
-export async function getNumberOfBlocksForChip(chipName, for_read, debug = false) {
+export async function getNumberOfTransmitPackets(chipName, debug = false) {
   // Retrieve known chip data from cache.
   const data = await getChipsData(debug);
   const chip = data.parts.find(part => part.model === chipName);
@@ -107,54 +106,54 @@ export async function getNumberOfBlocksForChip(chipName, for_read, debug = false
     }
     throw new Error(`Chip ${chipName} not found.`);
   }
-  const total_size = chip.capacity;  // use capacity as total_size
+  const total_size = chip.capacity;
   if (debug) {
     console.log(`Chip ${chipName} capacity: ${total_size}`);
   }
 
-  // Obtain block size via JSON-RPC.
-  let id;
-  if (for_read) {
-    id = await RPCCall("get_read_block_size", { }, debug);
-  } else {
-    id = await RPCCall("get_write_block_size", { }, debug);
-  }
-
+  // Obtain write block size via JSON-RPC.
+  const id = await RPCCall("get_transmit_packet_size", { }, debug);
   const response = await getRPCResponse(id, debug);
-  // Calculate the number of blocks as the total chip capacity divided by the block size.
   const blockSize = response.payload.result;
   if (debug) {
-    console.log(`Block size for chip ${chipName}:`, blockSize);
-    console.log(`Number of blocks for chip ${chipName}:`, total_size / blockSize);
+    console.log(`Write block size for chip ${chipName}:`, blockSize);
+    console.log(`Number of write blocks for chip ${chipName}:`, total_size / blockSize);
   }
   return total_size / blockSize;
 }
 
 /**
- * Retrieves the block size from the flash chip using the "get_read_block_size" RPC call.
+ * Gets the number of read blocks for a given chip based on its capacity.
  *
- * @param {boolean} [debug=false] - If true, outputs debug information.
- * @returns {Promise<number>} The block size in bytes.
- * @throws {Error} If the block size cannot be retrieved.
+ * @param {string} chipName - The model name of the chip.
+ * @param {boolean} [debug=false] - If true, logs debug information.
+ * @returns {Promise<number>} Resolves to the number of read blocks.
  */
-export async function getBlockSize(for_read ,debug = false) {
-    try {
-        let rpcIdBlockSize;
-      if (for_read) {
-        rpcIdBlockSize = await RPCCall("get_read_block_size", {}, debug);
-      } else {
-        rpcIdBlockSize = await RPCCall("get_write_block_size", {}, debug);
-      }
-      const respBlockSize = await getRPCResponse(rpcIdBlockSize, debug);
-      const blockSize = Number(respBlockSize.payload.result);
-      if (debug) {
-        console.log(`Retrieved block size: ${blockSize} bytes.`);
-      }
-      return blockSize;
-    } catch (error) {
-      throw new Error(`Failed to retrieve block size: ${error.message}`);
+export async function getNumberOfReceivePackets(chipName, debug = false) {
+  // Retrieve known chip data from cache.
+  const data = await getChipsData(debug);
+  const chip = data.parts.find(part => part.model === chipName);
+  if (!chip) {
+    if (debug) {
+      console.error(`Chip ${chipName} not found in known chips data.`);
     }
+    throw new Error(`Chip ${chipName} not found.`);
   }
+  const total_size = chip.capacity;
+  if (debug) {
+    console.log(`Chip ${chipName} capacity: ${total_size}`);
+  }
+
+  // Obtain read block size via JSON-RPC.
+  const id = await RPCCall("get_receive_packet_size", { }, debug);
+  const response = await getRPCResponse(id, debug);
+  const blockSize = response.payload.result;
+  if (debug) {
+    console.log(`Read block size for chip ${chipName}:`, blockSize);
+    console.log(`Number of read blocks for chip ${chipName}:`, total_size / blockSize);
+  }
+  return total_size / blockSize;
+}
 
 /**
  * Generator function that reads each block of the chip data, optionally validating the CRC.
@@ -171,7 +170,7 @@ export async function getBlockSize(for_read ,debug = false) {
  * @throws {Error} If the block fails to be read correctly after 3 attempts.
  */
 export async function* readChipBlocks(chipName, append_crc = true, debug = false) {
-  const num_blocks = await getNumberOfBlocksForChip(chipName, true, debug);
+  const num_blocks = await getNumberOfTransmitPackets(chipName, debug);
   if (debug) {
     console.log(`Reading ${num_blocks} block(s) from chip ${chipName}`);
   }
@@ -219,18 +218,6 @@ export async function* readChipBlocks(chipName, append_crc = true, debug = false
   }
 }
 
-
-function generateIncrementalUint8Array(size) {
-    const arr = new Uint8Array(size);
-    if (size > 0) {
-      arr[0] = 0xFF;
-    }
-    for (let i = 1; i < size; i++) {
-      arr[i] = Math.floor(Math.random() * 256);
-    }
-    return arr;
-  }
-
 /**
  * Async generator function that writes each block of the chip data using the
  * "programmer_write_block" RPC call, yielding the block index for each written block.
@@ -245,7 +232,12 @@ function generateIncrementalUint8Array(size) {
  * @throws {Error} If the data length is not a multiple of the block size or any block fails to write after 3 attempts.
  */
 export async function* writeChipBlocks(chipName, fileData, verify = false, debug = false) {
-    const BLOCK_SIZE = await getBlockSize(false, debug);
+    console.log(await getChipsData(debug));
+    const DATA = await getChipsData(debug); 
+    const CHIP = DATA.parts.find(part => part.model === chipName);
+    const CHIP_SIZE = CHIP.capacity;
+    const BLOCK_COUNT = await getNumberOfReceivePackets(chipName, false, debug);
+    const BLOCK_SIZE = CHIP_SIZE / BLOCK_COUNT;
   
     if (fileData.byteLength % BLOCK_SIZE !== 0) {
       throw new Error(`Data length (${fileData.byteLength}) is not a multiple of block size (${BLOCK_SIZE}).`);
@@ -254,14 +246,6 @@ export async function* writeChipBlocks(chipName, fileData, verify = false, debug
     const numBlocks = fileData.byteLength / BLOCK_SIZE;
     if (debug) {
       console.log(`Writing ${numBlocks} block(s) to flash with block size=${BLOCK_SIZE} bytes.`);
-    }
-
-    const data = await getChipsData(debug);
-    const chip = data.parts.find(part => part.model === chipName);
-
-    const pageSize = chip.page_size
-    if (debug) {
-        console.log(`Chip ${chipName} page size: ${pageSize}`);
     }
     
     for (let blockId = 0; blockId < numBlocks; blockId++) {
@@ -281,7 +265,7 @@ export async function* writeChipBlocks(chipName, fileData, verify = false, debug
         }
         try {
           const crc = blockData.reduce((a, b) => a + b, 0) % 256;
-          const rpcId = await RPCCall("programmer_write_block", { block_id: blockId, chip_page_size: pageSize, data: blockDataB64, crc: crc }, debug);
+          const rpcId = await RPCCall("programmer_write_block", { block_id: blockId, data: blockDataB64, crc: crc }, debug);
           resp = await getRPCResponse(rpcId, debug);
           written = true;
           if (debug) {

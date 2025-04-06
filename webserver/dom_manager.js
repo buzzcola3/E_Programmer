@@ -1,4 +1,4 @@
-import { detectChipFromFlash, getKnownChips, readChipBlocks, getBlockSize, writeChipBlocks, getNumberOfBlocksForChip, startEraseChip, getEraseDone } from './programmer.js';
+import { detectChipFromFlash, getKnownChips, readChipBlocks, writeChipBlocks, getNumberOfReceivePackets, getNumberOfTransmitPackets, startEraseChip, getEraseDone } from './programmer.js';
 
 import { joinUint8Arrays, triggerUint8Download, triggerUint8Upload } from './utils.js';
 
@@ -16,21 +16,20 @@ flash.addEventListener('click', async () => {
     log.innerHTML = 'Flashing...';
     progressBar.style.width = '0%';
     try {
+      const chipName = chip.value;
       // Trigger file upload to get the complete chip data as a Uint8Array.
       const fileData = await triggerUint8Upload();
       console.log('File data received:', fileData);
   
-
-      const BLOCK_SIZE = await getBlockSize(false, DEBUG);
-      const totalBlocks = fileData.byteLength / BLOCK_SIZE;
-      console.log(`Block size: ${BLOCK_SIZE} bytes. Total blocks: ${totalBlocks}`);
+      const totalPackets = await getNumberOfReceivePackets(chipName, DEBUG)
+      console.log(`Total blocks: ${totalPackets}`);
   
-      let writtenBlocks = 0;
-      const chipName = chip.value;
+      let sentPackets = 0;
       // Use the writeChipBlocks async generator to write the chip data block by block.
       for await (const blockId of writeChipBlocks(chipName, fileData, true, DEBUG)) {
-        writtenBlocks++;
-        const progress = Math.floor((writtenBlocks / totalBlocks) * 100);
+        sentPackets++;
+        log.innerHTML += `.`;
+        const progress = Math.floor((sentPackets / totalPackets) * 100);
         progressBar.style.width = `${progress}%`;
         console.log(`Block ${blockId} written; progress: ${progress}%`);
       }
@@ -51,7 +50,9 @@ dump.addEventListener('click', async () => {
     const chipName = chip.value;
     try {
       // Get total number of blocks for the selected chip.
-      const totalBlocks = await getNumberOfBlocksForChip(chipName, true, DEBUG);
+      const totalBlocks = await getNumberOfTransmitPackets(chipName, DEBUG);
+      console.log(`Total blocks: ${totalBlocks}`);
+
       let fullChipData = [];
       let blockIndex = 0;
       
@@ -71,7 +72,6 @@ dump.addEventListener('click', async () => {
       triggerUint8Download(bytes, 'dump.bin', 'application/octet-stream');
       
       log.innerHTML = `Dump complete: ${fullChipData.length} bytes read and downloaded.`;
-      console.log(fullChipData);
       progressBar.style.width = '100%';
     } catch (error) {
       log.innerHTML = 'Error dumping chip data.';
@@ -82,13 +82,13 @@ dump.addEventListener('click', async () => {
 
 erase.addEventListener('click', async () => {
     log.innerHTML = 'Erasing...';
-    progressBar.style.width = '0%';
+    progressBar.style.width = '1%';
     startEraseChip(true, DEBUG);
     while (!getEraseDone(true, DEBUG)) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       log.innerHTML += '.';
     }
-    
+    progressBar.style.width = '100%';
 });
 
 detect.addEventListener('click', async () => {

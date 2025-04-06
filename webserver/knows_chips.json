@@ -2,69 +2,39 @@
   "parts": [
     {
       "model": "W25Q80",
-      "id": "0x4014",
-      "manufacturer_id": "0xef",
       "manufacturer_name": "Winbond",
       "jdec_id": "0xef4014",
-      "capacity": 1048576,
-      "sector_size": 4096,
-      "page_size": 256,
-      "pages_per_sector": 16
+      "capacity": 1048576
     },
     {
       "model": "W25Q16",
-      "id": "0x4015",
-      "manufacturer_id": "0xef",
       "manufacturer_name": "Winbond",
       "jdec_id": "0xef4015",
-      "capacity": 2097152,
-      "sector_size": 8192,
-      "page_size": 512,
-      "pages_per_sector": 32
+      "capacity": 2097152
     },
     {
       "model": "W25Q32",
-      "id": "0x4016",
-      "manufacturer_id": "0xef",
       "manufacturer_name": "Winbond",
       "jdec_id": "0xef4016",
-      "capacity": 4194304,
-      "sector_size": 16384,
-      "page_size": 1024,
-      "pages_per_sector": 64
+      "capacity": 4194304
     },
     {
       "model": "W25Q64",
-      "id": "0x4017",
-      "manufacturer_id": "0xef",
       "manufacturer_name": "Winbond",
       "jdec_id": "0xef4017",
-      "capacity": 8388608,
-      "sector_size": 32768,
-      "page_size": 2048,
-      "pages_per_sector": 128
+      "capacity": 8388608
     },
     {
       "model": "W25Q128",
-      "id": "0x4018",
-      "manufacturer_id": "0xef",
       "manufacturer_name": "Winbond",
       "jdec_id": "0xef4018",
-      "capacity": 16777216,
-      "sector_size": 65536,
-      "page_size": 4096,
-      "pages_per_sector": 256
+      "capacity": 16777216
     },
     {
       "model": "MX25L8006E",
-      "id": "0x2014",
-      "manufacturer_id": "0xc2",
       "manufacturer_name": "Macronix",
       "jdec_id": "0xc22014",
-      "capacity": 1048576,
-      "sector_size": 4096,
-      "page_size": 256,
-      "pages_per_sector": 16
+      "capacity": 1048576
     }
   ]
 }

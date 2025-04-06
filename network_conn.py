@@ -1,9 +1,9 @@
 import network
 import time
 
-SSID = "BetakNET3"
-PASSWORD = "Marian228"
-AP_SSID = "e-P falsher"
+SSID = "YourSSID"
+PASSWORD = "yourpassword"
+AP_SSID = "E Programmer"
 
 def connect_wifi():
     station = network.WLAN(network.STA_IF)
@@ -36,3 +36,5 @@ def enable_ap():
     ap.active(True)
     ap.config(essid=AP_SSID)
     print("AP mode enabled:", ap.ifconfig())
+
+connect_wifi()
