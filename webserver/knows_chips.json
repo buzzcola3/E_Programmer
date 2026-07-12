@@ -35,6 +35,12 @@
       "manufacturer_name": "Macronix",
       "jdec_id": "0xc22014",
       "capacity": 1048576
+    },
+    {
+      "model": "GD25Q128C",
+      "manufacturer_name": "GigaDevice",
+      "jdec_id": "0xc84018",
+      "capacity": 16777216
     }
   ]
 }

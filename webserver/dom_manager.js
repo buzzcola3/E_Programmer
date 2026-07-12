@@ -83,8 +83,8 @@ dump.addEventListener('click', async () => {
 erase.addEventListener('click', async () => {
     log.innerHTML = 'Erasing...';
     progressBar.style.width = '1%';
-    startEraseChip(true, DEBUG);
-    while (!getEraseDone(true, DEBUG)) {
+    await startEraseChip(DEBUG);
+    while (!(await getEraseDone(DEBUG))) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       log.innerHTML += '.';
     }

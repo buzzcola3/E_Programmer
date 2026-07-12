@@ -78,12 +78,15 @@ class SPIFlash:
         """
         Sets the flash chip write enable state.
         """
+        self.cs.value(0)
         self.hspi.write(bytes([self.CMD_W_EN if enable else self.CMD_W_DE]))
+        self.cs.value(1)
 
     def erase_all(self, **kwargs):
         """
         Erase the whole chip.
         """
+        self.set_write_enable(True)
         self.spi_write(self.CMD_CHIP_ERASE)
 
     def erase_suspend(self, **kwargs):
@@ -123,15 +126,13 @@ class SPIFlash:
         """
         Writes a page starting at 'addr_start' with the content in 'buf'.
         """
-        self.cs.value(0)
         self.set_write_enable(True)
-        
+
+        self.cs.value(0)
         self.hspi.write(bytes([self.CMD_PAGE_PGM]))
         addr_bytes = addr_start.to_bytes(3, 'big')
         self.hspi.write(addr_bytes)
         self.hspi.write(buf)
-        
-        self.set_write_enable(False)
         self.cs.value(1)
         
 
@@ -139,6 +140,7 @@ class SPIFlash:
         """
         Erases a 4KB sector starting at 'addr_start'.
         """
+        self.set_write_enable(True)
         self.cs.value(0)
         self.hspi.write(bytes([self.CMD_SECTOR_E]))
         addr_bytes = addr_start.to_bytes(3, 'big')
@@ -149,6 +151,7 @@ class SPIFlash:
         """
         Erases a 32KB block starting at 'addr_start'.
         """
+        self.set_write_enable(True)
         self.cs.value(0)
         self.hspi.write(bytes([self.CMD_BLK_E_32K]))
         addr_bytes = addr_start.to_bytes(3, 'big')
@@ -159,6 +162,7 @@ class SPIFlash:
         """
         Erases a 64KB block starting at 'addr_start'.
         """
+        self.set_write_enable(True)
         self.cs.value(0)
         self.hspi.write(bytes([self.CMD_BLK_E_64K]))
         addr_bytes = addr_start.to_bytes(3, 'big')
